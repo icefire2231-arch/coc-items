@@ -138,8 +138,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.js"></script>
   <script>
     // >>> A REMPLACER par vos valeurs (Supabase > Project Settings > API) <<<
-    const SUPABASE_URL = "https://VOTRE-PROJET.supabase.co";
-    const SUPABASE_ANON_KEY = "VOTRE_CLE_ANON";
+    const SUPABASE_URL = "https://nomfsmolgmzknzokjnqr.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_t4i6v43yTj7VTkUEXyW_UA_JBf7oe8P";
 
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     let cats = [], parent = null, sub = null, stockF = "all";
