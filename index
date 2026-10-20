@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Objets Clash of Clans</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; padding: 1rem; background: #1b2a41; color: #fff; }
+    .filters { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: .75rem; }
+    button { padding: .5rem 1rem; border: 0; border-radius: 6px; cursor: pointer; }
+    button.active { background: #f5b700; font-weight: bold; }
+    #subfilters button { background: #8fb8de; font-size: .9rem; }
+    #subfilters button.active { background: #f5b700; }
+    #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; margin-top: 1rem; }
+    .card { background: #324a5f; border-radius: 10px; padding: .75rem; text-align: center; }
+    .card img { width: 100%; height: 120px; object-fit: contain; }
+    footer { margin-top: 2rem; font-size: .8rem; opacity: .7; }
+  </style>
+</head>
+<body>
+  <h1>Objets Clash of Clans</h1>
+  <div id="filters" class="filters"></div>
+  <div id="subfilters" class="filters"></div>
+  <div id="grid"></div>
+  <footer>Site de fans, non affilié à Supercell.</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.js"></script>
+  <script>
+    // >>> A REMPLACER par vos valeurs (Supabase > Project Settings > API) <<<
+    const SUPABASE_URL = "https://VOTRE-PROJET.supabase.co";
+    const SUPABASE_ANON_KEY = "VOTRE_CLE_ANON";
+
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    let cats = [], parent = null, sub = null;
+
+    function addBtn(box, label, active, onclick) {
+      const b = document.createElement("button");
+      b.textContent = label;
+      b.className = active ? "active" : "";
+      b.onclick = onclick;
+      box.appendChild(b);
+    }
+
+    function renderFilters() {
+      const top = document.getElementById("filters");
+      const subBox = document.getElementById("subfilters");
+      top.innerHTML = ""; subBox.innerHTML = "";
+
+      addBtn(top, "Tout", parent === null, () => { parent = null; sub = null; refresh(); });
+      cats.filter(c => !c.parent_id).forEach(c =>
+        addBtn(top, c.name, parent === c.id, () => { parent = c.id; sub = null; refresh(); })
+      );
+
+      if (parent) {
+        const children = cats.filter(c => c.parent_id === parent);
+        if (children.length) {
+          addBtn(subBox, "Tous", sub === null, () => { sub = null; refresh(); });
+          children.forEach(c =>
+            addBtn(subBox, c.name, sub === c.id, () => { sub = c.id; refresh(); })
+          );
+        }
+      }
+    }
+
+    async function loadItems() {
+      let q = db.from("items").select("*").order("name");
+      if (sub) {
+        q = q.eq("category_id", sub);
+      } else if (parent) {
+        const ids = [parent, ...cats.filter(c => c.parent_id === parent).map(c => c.id)];
+        q = q.in("category_id", ids);
+      }
+      const { data } = await q;
+      document.getElementById("grid").innerHTML = (data || []).map(i => `
+        <div class="card">
+          <img src="${i.image_url}" alt="${i.name}" loading="lazy">
+          <h3>${i.name}</h3>
+        </div>`).join("");
+    }
+
+    function refresh() { renderFilters(); loadItems(); }
+
+    async function init() {
+      const { data } = await db.from("categories").select("*").order("id");
+      cats = data || [];
+      refresh();
+    }
+    init();
+  </script>
+</body>
+</html>
