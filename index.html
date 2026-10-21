@@ -225,7 +225,8 @@
 
     /* ---------- Cartes ---------- */
     function makeCard(item, index) {
-      const available = Number(item.stock) === 1;
+      const qty = Number(item.stock) || 0;
+      const available = qty > 0;
 
       const cell = document.createElement("div");
       cell.className = "cell";
@@ -236,7 +237,7 @@
 
       const badge = document.createElement("div");
       badge.className = "badge " + (available ? "ok" : "ko");
-      badge.textContent = available ? "✔ Dispo" : "✖ Indispo";
+      badge.textContent = available ? "✔ Dispo ×" + qty : "✖ Indispo";
       card.appendChild(badge);
 
       const pic = document.createElement("div");
@@ -298,14 +299,15 @@
       let q = db.from("items").select("*").order("stock", { ascending: false }).order("name");
       if (sub) q = q.eq("category_id", sub);
       else if (parent) q = q.in("category_id", [parent, ...cats.filter(c => c.parent_id === parent).map(c => c.id)]);
-      if (stockF !== "all") q = q.eq("stock", Number(stockF));
+      if (stockF === "1") q = q.gt("stock", 0);
+      else if (stockF === "0") q = q.eq("stock", 0);
 
       const { data, error } = await q;
       grid.innerHTML = "";
       if (error) { grid.innerHTML = '<div class="msg stroke">😢 Erreur de chargement</div>'; count.textContent = ""; return; }
       if (!data.length) { grid.innerHTML = '<div class="msg stroke">Aucun objet trouvé 🕵️</div>'; count.textContent = ""; return; }
 
-      const dispo = data.filter(i => Number(i.stock) === 1).length;
+      const dispo = data.filter(i => Number(i.stock) > 0).length;
       count.textContent = `${data.length} objet${data.length > 1 ? "s" : ""} • ${dispo} disponible${dispo > 1 ? "s" : ""}`;
       data.forEach((item, i) => grid.appendChild(makeCard(item, i)));
     }
